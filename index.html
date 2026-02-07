@@ -488,7 +488,7 @@
   const name = form.querySelector('input[type="text"]')?.value;
 
   try {
-    const res = await fetch(`https://your-backend.onrender.com/api/auth/${type}`, {
+    const res = await fetch(`https://57xz6s-3000.csb.app/api/auth/${type}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password, name })
