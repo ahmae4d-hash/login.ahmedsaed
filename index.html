@@ -475,6 +475,39 @@
           });
         });
       }
+      // الربط بالباك اند
+      async function handleAuth(e, type) {
+  e.preventDefault();
+  const form = e.target;
+  const btn = form.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  btn.innerHTML = `<div class="loader"></div> جاري المعالجة...`;
+
+  const email = form.querySelector('input[type="email"]').value;
+  const password = form.querySelector('input[type="password"]')?.value;
+  const name = form.querySelector('input[type="text"]')?.value;
+
+  try {
+    const res = await fetch(`https://your-backend.onrender.com/api/auth/${type}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, name })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message);
+
+    if (data.token) localStorage.setItem('token', data.token);
+
+    showToast(data.message, 'success');
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = type === 'login' ? 'تسجيل الدخول' : 'تأكيد';
+  }
+}
+
     </script>
   </body>
 </html>
