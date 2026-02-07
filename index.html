@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>بوابة الثلج السرية | Ultra Identity</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap");
+      :root {
+        --neon: #00f3ff;
+        --error: #ff4d4d;
+      }
+      body {
+        font-family: "Cairo", sans-serif;
+        background-color: #020617;
+        margin: 0;
+        overflow: hidden;
+        color: white;
+      }
+
+      #mountain-viewport {
+        position: fixed;
+        inset: 0;
+        z-index: -2;
+        background: url("https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2070")
+          center/cover;
+        filter: saturate(0.6) brightness(0.25);
+        transform: scale(1.1);
+      }
+      #snow-layer {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+      }
+
+      .auth-card {
+        background: rgba(10, 20, 30, 0.75);
+        backdrop-filter: blur(30px);
+        border: 1px solid rgba(0, 243, 255, 0.2);
+        border-radius: 32px;
+        width: min(92%, 420px);
+        max-height: 92vh;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-width: none;
+        display: none;
+      }
+      .auth-card.active {
+        display: block;
+      }
+
+      .input-with-icon {
+        padding-right: 3rem !important;
+      }
+
+      /* Focus Visible for Accessibility */
+      input:focus-visible,
+      button:focus-visible {
+        outline: 2px solid var(--neon);
+        outline-offset: 4px;
+      }
+
+      /* Reduced Motion */
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+
+      .error-text {
+        font-size: 0.75rem;
+        color: var(--error);
+        margin-top: 5px;
+        height: 0;
+        opacity: 0;
+        overflow: hidden;
+        transition: 0.3s;
+      }
+      .is-invalid + .error-text {
+        height: auto;
+        opacity: 1;
+        margin-top: 8px;
+      }
+      .is-invalid {
+        border-color: var(--error) !important;
+        box-shadow: 0 0 10px rgba(255, 77, 77, 0.2);
+      }
+
+      /* Toast Animation */
+      #toast-container {
+        position: fixed;
+        top: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9999;
+      }
+      .toast {
+        background: rgba(2, 6, 23, 0.95);
+        border: 1px solid var(--neon);
+        padding: 12px 24px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+      }
+
+      .loader {
+        width: 18px;
+        height: 18px;
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-top-color: var(--neon);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body class="flex items-center justify-center min-h-screen">
+    <div id="mountain-viewport"></div>
+    <div id="snow-layer"></div>
+    <div id="toast-container" aria-live="polite"></div>
+
+    <main
+      id="app-container"
+      class="relative z-10 w-full px-4 flex justify-center"
+    >
+      <section
+        id="loginPage"
+        class="auth-card active p-8 md:p-12 shadow-2xl animate__animated"
+      >
+        <header class="text-center mb-10">
+          <h1 class="text-3xl font-bold tracking-tighter text-cyan-400">
+            ICE_GATE
+            <span class="text-[10px] opacity-50 uppercase tracking-widest"
+              >Master</span
+            >
+          </h1>
+          <p class="text-gray-400 text-[10px] uppercase tracking-[0.4em] mt-1">
+            Quantum Security Layer
+          </p>
+        </header>
+
+        <form onsubmit="handleAuth(event, 'login')" class="space-y-6">
+          <div class="relative group">
+            <i
+              data-lucide="mail"
+              class="absolute right-4 top-4 w-5 h-5 text-gray-500 group-focus-within:text-cyan-400 transition-colors"
+            ></i>
+            <input
+              type="email"
+              placeholder="البريد الالكترونى "
+              autocomplete="email"
+              required
+              class="input-with-icon w-full p-4 rounded-2xl text-sm bg-white/5 border border-white/10 text-white outline-none focus:border-cyan-500/40 transition-all"
+            />
+            <div class="error-text text-right">عنوان البريد غير معترف به</div>
+          </div>
+
+          <div class="relative group">
+            <i
+              data-lucide="lock"
+              class="absolute right-4 top-4 w-5 h-5 text-gray-500 group-focus-within:text-cyan-400 transition-colors"
+            ></i>
+            <input
+              type="password"
+              id="passLogin"
+              placeholder=" كلمة السر "
+              autocomplete="current-password"
+              required
+              class="input-with-icon w-full p-4 rounded-2xl text-sm bg-white/5 border border-white/10 text-white outline-none focus:border-cyan-500/40 transition-all"
+            />
+            <button
+              type="button"
+              onclick="togglePassword('passLogin', this)"
+              class="absolute left-4 top-4 text-gray-500 hover:text-white transition-colors"
+            >
+              <i data-lucide="eye" class="w-5 h-5"></i>
+            </button>
+            <div class="error-text text-right">مفتاح الوصول غير صحيح</div>
+          </div>
+
+          <button
+            type="submit"
+            class="w-full py-4 rounded-2xl font-bold bg-gradient-to-r from-cyan-600 to-blue-700 hover:shadow-[0_0_30px_rgba(6,182,212,0.3)] transition-all flex justify-center items-center gap-3"
+          >
+            <span>تسجيل الدخول </span>
+          </button>
+
+          <div class="relative flex items-center py-2">
+            <div class="flex-grow border-t border-white/5"></div>
+            <span
+              class="mx-3 text-[9px] text-gray-500 uppercase tracking-widest font-bold"
+              >Social Link</span
+            >
+            <div class="flex-grow border-t border-white/5"></div>
+          </div>
+
+          <div class="flex justify-center gap-6">
+            <button
+              type="button"
+              aria-label="Google"
+              class="p-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-110 transition-all"
+            >
+              <img
+                src="https://www.svgrepo.com/show/355037/google.svg"
+                class="w-6 h-6"
+                alt=""
+              />
+            </button>
+            <button
+              type="button"
+              aria-label="Facebook"
+              class="p-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-110 transition-all"
+            >
+              <img
+                src="https://www.svgrepo.com/show/475647/facebook-color.svg"
+                class="w-6 h-6"
+                alt=""
+              />
+            </button>
+          </div>
+
+          <footer class="flex justify-between text-[11px] text-gray-500 pt-2">
+            <button
+              type="button"
+              onclick="router('signupPage')"
+              class="hover:text-cyan-400 transition-colors"
+            >
+              انشاء حساب
+            </button>
+            <button
+              type="button"
+              onclick="router('forgotPage')"
+              class="hover:text-cyan-400 transition-colors"
+            >
+              نسيت كلمة السر
+            </button>
+          </footer>
+        </form>
+      </section>
+
+      <section id="signupPage" class="auth-card p-8 md:p-12 shadow-2xl">
+        <header class="text-center mb-8">
+          <h2
+            class="text-2xl font-bold text-emerald-400 uppercase tracking-tighter"
+          >
+            انشاء حساب
+          </h2>
+          <p class="text-gray-500 text-[9px] mt-1">انشاءحساب لدخو معنا</p>
+        </header>
+        <form onsubmit="handleAuth(event, 'signup')" class="space-y-5">
+          <div class="relative group">
+            <i
+              data-lucide="user"
+              class="absolute right-4 top-4 w-5 h-5 text-gray-500 group-focus-within:text-emerald-400 transition-colors"
+            ></i>
+            <input
+              type="text"
+              placeholder="اسمك الكريم  "
+              required
+              class="input-with-icon w-full p-4 rounded-2xl text-sm bg-white/5 border border-white/10 text-white outline-none focus:border-emerald-500/40 transition-all"
+            />
+          </div>
+          <div class="relative group">
+            <i
+              data-lucide="mail"
+              class="absolute right-4 top-4 w-5 h-5 text-gray-500 group-focus-within:text-emerald-400 transition-colors"
+            ></i>
+            <input
+              type="email"
+              placeholder="البريد الإلكتروني"
+              required
+              class="input-with-icon w-full p-4 rounded-2xl text-sm bg-white/5 border border-white/10 text-white outline-none focus:border-emerald-500/40 transition-all"
+            />
+          </div>
+          <button
+            type="submit"
+            class="w-full py-4 rounded-2xl font-bold bg-emerald-600 hover:bg-emerald-500 transition-all shadow-lg"
+          >
+            تأكيد
+          </button>
+          <button
+            type="button"
+            onclick="router('loginPage')"
+            class="w-full text-center text-xs text-gray-500 hover:text-white mt-4 transition-colors"
+          >
+            العودة لتسجيل الدخول
+          </button>
+        </form>
+      </section>
+
+      <section id="forgotPage" class="auth-card p-8 md:p-12 shadow-2xl">
+        <header class="text-center mb-8">
+          <h2
+            class="text-2xl font-bold text-red-400 uppercase tracking-tighter"
+          >
+            Recovery
+          </h2>
+          <p class="text-gray-500 text-[9px] mt-1">
+            ادخال بريدك الالكترونى ثم نبعت لك رسالة فى ايميلك
+          </p>
+        </header>
+        <form onsubmit="handleAuth(event, 'recovery')" class="space-y-6">
+          <input
+            type="email"
+            placeholder="أدخل البريد الالكترونى "
+            required
+            class="w-full p-4 rounded-2xl text-sm bg-white/5 border border-white/10 text-white outline-none focus:border-red-500/40 transition-all"
+          />
+          <button
+            type="submit"
+            class="w-full py-4 rounded-2xl font-bold bg-red-600/80 hover:bg-red-500 transition-all shadow-lg"
+          >
+            ارسال الرسالة الان
+          </button>
+          <button
+            type="button"
+            onclick="router('loginPage')"
+            class="w-full text-center text-xs text-gray-500 hover:text-white transition-colors"
+          >
+            العودة اتسجيل الدخول
+          </button>
+        </form>
+      </section>
+    </main>
+
+    <script>
+      lucide.createIcons();
+
+      /* --- محاكاة الثلج الواقعي (Advanced Configuration) --- */
+      const isMobile = window.innerWidth < 768;
+      particlesJS("snow-layer", {
+        particles: {
+          number: {
+            value: isMobile ? 50 : 160,
+            density: { enable: true, value_area: 800 },
+          },
+          color: { value: "#ffffff" },
+          shape: { type: "circle" },
+          opacity: {
+            value: 0.8,
+            random: true,
+            anim: { enable: true, speed: 1, opacity_min: 0.1, sync: false },
+          },
+          size: {
+            value: 4.5,
+            random: true,
+            anim: { enable: true, speed: 2, size_min: 0.3, sync: false },
+          },
+          line_linked: { enable: false },
+          move: {
+            enable: true,
+            speed: 2.2,
+            direction: "bottom-right",
+            random: true,
+            straight: false,
+            out_mode: "out",
+            attract: { enable: false, rotateX: 600, rotateY: 1200 },
+          },
+        },
+        interactivity: {
+          detect_on: "canvas",
+          events: { onhover: { enable: !isMobile, mode: "bubble" } },
+          modes: {
+            bubble: { distance: 150, size: 2, duration: 2, opacity: 0 },
+          },
+        },
+      });
+
+      /* --- نظام التعامل مع النماذج (Unified Auth) --- */
+      function handleAuth(e, type) {
+        e.preventDefault();
+        const btn = e.target.querySelector('button[type="submit"]');
+        const originalContent = btn.innerHTML;
+
+        btn.disabled = true;
+        btn.innerHTML = `<div class="loader"></div> <span>جاري معالجة البيانات...</span>`;
+
+        setTimeout(() => {
+          showToast(
+            type === "recovery"
+              ? "تم إرسال  الرسالة للبريد"
+              : "تم التصريح بالدخول للمنطقة الأمنية",
+            "success"
+          );
+          btn.disabled = false;
+          btn.innerHTML = originalContent;
+        }, 2000);
+      }
+
+      function showToast(msg, type) {
+        const container = document.getElementById("toast-container");
+        const toast = document.createElement("div");
+        toast.className = "toast";
+        toast.innerHTML = `<i data-lucide="shield-check" class="text-cyan-400 w-5 h-5"></i> <span class="text-sm font-bold">${msg}</span>`;
+        container.appendChild(toast);
+        lucide.createIcons();
+
+        gsap.fromTo(
+          toast,
+          { y: -20, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.5, ease: "back.out" }
+        );
+        setTimeout(() => {
+          gsap.to(toast, {
+            opacity: 0,
+            y: -20,
+            duration: 0.4,
+            onComplete: () => toast.remove(),
+          });
+        }, 3500);
+      }
+
+      function togglePassword(id, btn) {
+        const input = document.getElementById(id);
+        const icon = btn.querySelector("i");
+        input.type = input.type === "password" ? "text" : "password";
+        icon.setAttribute(
+          "data-lucide",
+          input.type === "password" ? "eye" : "eye-off"
+        );
+        lucide.createIcons();
+      }
+
+      function router(targetId) {
+        const current = document.querySelector(".auth-card.active");
+        const target = document.getElementById(targetId);
+
+        gsap.to(current, {
+          duration: 0.4,
+          opacity: 0,
+          y: -30,
+          filter: "blur(15px)",
+          onComplete: () => {
+            current.classList.remove("active");
+            target.classList.add("active");
+            gsap.fromTo(
+              target,
+              { opacity: 0, y: 30, filter: "blur(15px)" },
+              {
+                opacity: 1,
+                y: 0,
+                filter: "blur(0px)",
+                duration: 0.5,
+                ease: "power2.out",
+              }
+            );
+          },
+        });
+      }
+
+      /* --- تحسين حركة الخلفية --- */
+      if (!isMobile) {
+        document.addEventListener("mousemove", (e) => {
+          const x = (e.clientX - window.innerWidth / 2) * 0.01;
+          const y = (e.clientY - window.innerHeight / 2) * 0.01;
+          gsap.to("#mountain-viewport", {
+            x: x,
+            y: y,
+            duration: 2.5,
+            ease: "power1.out",
+          });
+        });
+      }
+    </script>
+  </body>
+</html>
